@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<wsdl:definitions xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+	xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:wsdl="http://schemas.xmlsoap.org/wsdl/"
+	xmlns:tns="http://jaxws.cxf.milan.com/" xmlns:ns1="http://schemas.xmlsoap.org/soap/http"
+	xmlns:wsp="http://www.w3.org/ns/ws-policy"
+	xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+	xmlns:wsaws="http://www.w3.org/2005/08/addressing" xmlns:sp="http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702"
+	xmlns:sp13="http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200802"
+	name="PersonSoapWS" targetNamespace="http://jaxws.cxf.milan.com/">
+	<wsdl:types>
+		<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+			elementFormDefault="unqualified" targetNamespace="http://jaxws.cxf.milan.com/"
+			version="1.0">
+			<xs:element name="Person" type="tns:personVO" />
+			<xs:element name="createPersonInBulk" type="tns:createPersonInBulk" />
+			<xs:element name="createPersonInBulkResponse" type="tns:createPersonInBulkResponse" />
+			<xs:complexType name="createPersonInBulk">
+				<xs:sequence>
+					<xs:element maxOccurs="unbounded" minOccurs="0" name="person"
+						type="tns:personVO" />
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="personVO">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="age" type="xs:long" />
+					<xs:element minOccurs="0" name="email" type="xs:string" />
+					<xs:element minOccurs="0" name="firstName" type="xs:string" />
+					<xs:element minOccurs="0" name="lastName" type="xs:string" />
+				</xs:sequence>
+			</xs:complexType>
+			<xs:complexType name="createPersonInBulkResponse">
+				<xs:sequence>
+					<xs:element minOccurs="0" name="return" type="xs:boolean" />
+				</xs:sequence>
+			</xs:complexType>
+		</xs:schema>
+	</wsdl:types>
+	<wsdl:message name="createPersonInBulkResponse">
+		<wsdl:part element="tns:createPersonInBulkResponse" name="parameters">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:message name="createPersonInBulk">
+		<wsdl:part element="tns:createPersonInBulk" name="parameters">
+		</wsdl:part>
+	</wsdl:message>
+	<wsdl:portType name="PersonSoapService">
+		<wsdl:operation name="createPersonInBulk">
+			<wsdl:input message="tns:createPersonInBulk" name="createPersonInBulk">
+			</wsdl:input>
+			<wsdl:output message="tns:createPersonInBulkResponse"
+				name="createPersonInBulkResponse">
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:portType>
+	<wsdl:binding name="PersonSoapServiceServiceSoapBinding"
+		type="tns:PersonSoapService">
+		<wsp:PolicyReference URI="#PersonSoapServiceServiceSoapBindingPolicy" />
+		<soap:binding style="document"
+			transport="http://schemas.xmlsoap.org/soap/http" />
+		<wsdl:operation name="createPersonInBulk">
+			<soap:operation soapAction="" style="document" />
+			<wsdl:input name="createPersonInBulk">
+				<soap:body use="literal" />
+			</wsdl:input>
+			<wsdl:output name="createPersonInBulkResponse">
+				<soap:body use="literal" />
+			</wsdl:output>
+		</wsdl:operation>
+	</wsdl:binding>
+	<wsdl:service name="PersonSoapWS">
+		<wsdl:port binding="tns:PersonSoapServiceServiceSoapBinding"
+			name="PersonSoapServicePort">
+			<soap:address location="/PersonSoapService" />
+		</wsdl:port>
+	</wsdl:service>
+	<wsp:Policy wsu:Id="PersonSoapServiceServiceSoapBindingPolicy"
+		xmlns:wsp="http://www.w3.org/ns/ws-policy"
+		xmlns:wsu="http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd"
+		xmlns:wsam="http://www.w3.org/2007/02/addressing/metadata">
+		<wsam:Addressing>
+                        <wsp:Policy>
+                            <wsam:NonAnonymousResponses/>
+                        </wsp:Policy>
+                    </wsam:Addressing>
+		<wsp:ExactlyOne>
+			<wsp:All>
+				<sp:SupportingTokens
+					xmlns:sp="http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702">
+					<wsp:Policy>
+						<sp:UsernameToken
+							sp:IncludeToken="http://docs.oasis-open.org/ws-sx/ws-securitypolicy/200702/IncludeToken/AlwaysToRecipient">
+							<wsp:Policy>
+								<sp:WssUsernameToken11 />
+							</wsp:Policy>
+						</sp:UsernameToken>
+					</wsp:Policy>
+				</sp:SupportingTokens>
+				<!-- <wsaw:UsingAddressing xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl" 
+					wsp:Optional="true" /> <sp:TransportBinding> <wsp:Policy> <sp:TransportToken> 
+					<wsp:Policy> <sp:HttpsToken RequireClientCertificate="false" /> </wsp:Policy> 
+					</sp:TransportToken> <sp:Layout> <wsp:Policy> <sp:Lax /> </wsp:Policy> </sp:Layout> 
+					<sp:IncludeTimestamp/> <sp:AlgorithmSuite> <wsp:Policy> <sp:Basic128 /> </wsp:Policy> 
+					</sp:AlgorithmSuite> </wsp:Policy> </sp:TransportBinding> <sp:SignedSupportingTokens> 
+					<wsp:Policy> <sp:UsernameToken sp:IncludeToken="http://schemas.xmlsoap.org/ws/2005/07/securitypolicy/IncludeToken/AlwaysToRecipient"> 
+					<wsp:Policy> <sp:WssUsernameToken10 /> </wsp:Policy> </sp:UsernameToken> 
+					</wsp:Policy> </sp:SignedSupportingTokens> <sp:Wss11 /> -->
+			</wsp:All>
+		</wsp:ExactlyOne>
+	</wsp:Policy>
+</wsdl:definitions>

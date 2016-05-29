@@ -1,0 +1,4 @@
+/build/
+*.classes
+*.war
+*.jar

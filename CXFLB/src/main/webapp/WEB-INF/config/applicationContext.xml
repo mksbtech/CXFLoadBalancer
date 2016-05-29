@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/mvc"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:camel="http://camel.apache.org/schema/spring" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx" xmlns:websocket="http://www.springframework.org/schema/websocket"
+	xmlns:amq="http://activemq.apache.org/schema/core" xmlns:jaxrs="http://cxf.apache.org/jaxrs"
+	xmlns:jaxws="http://cxf.apache.org/jaxws" xmlns:cxf="http://camel.apache.org/schema/cxf"
+	xmlns:jaxrs-client="http://cxf.apache.org/jaxrs-client"
+	xmlns:clustering="http://cxf.apache.org/clustering" xmlns:util="http://www.springframework.org/schema/util"
+	xsi:schemaLocation="http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd
+		http://camel.apache.org/schema/spring http://camel.apache.org/schema/spring/camel-spring.xsd
+		http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket.xsd
+		http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core-5.12.0.xsd
+		http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd
+		http://cxf.apache.org/jaxrs http://cxf.apache.org/schemas/jaxrs.xsd
+		http://cxf.apache.org/jaxws http://cxf.apache.org/schemas/jaxws.xsd
+		http://camel.apache.org/schema/cxf http://camel.apache.org/schema/cxf/camel-cxf.xsd
+		http://cxf.apache.org/clustering http://cxf.apache.org/schemas/clustering.xsd
+		http://cxf.apache.org/jaxrs-client http://cxf.apache.org/schemas/jaxrs-client.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-4.0.xsd">
+
+	<context:annotation-config />
+	<context:component-scan
+		base-package="com.milan.cxf.service,com.milan.cxf.jaxrs.exception" />
+	<context:property-placeholder location="classpath:/config/config.properties" />
+	<!-- ProperttComponent for Camel LB -->
+	<beans:bean id="properties"
+		class="org.apache.camel.component.properties.PropertiesComponent">
+		<beans:property name="location"
+			value="classpath:/config/config.properties" />
+	</beans:bean>
+
+	<cxf:rsServer id="LBRSServer" address="/rest"
+		serviceClass="com.milan.cxf.jaxrs.PersonLBService">
+		<cxf:providers>
+			<beans:bean class="org.codehaus.jackson.jaxrs.JacksonJsonProvider" />
+			<beans:bean
+				class="com.milan.cxf.jaxrs.exception.ApplicationExceptionMapper" />
+			<beans:bean class="com.milan.cxf.jaxrs.exception.GenericExceptionMapper" />
+		</cxf:providers>
+	</cxf:rsServer>
+
+	<util:list id="addressList" value-type="java.lang.String">
+		<beans:value>${server1}</beans:value>
+		<beans:value>${server2}</beans:value>
+	</util:list>
+	<cxf:rsClient id="personRSServiceClient" address="/xyz"
+		serviceClass="com.milan.cxf.jaxrs.client.PersonRSServiceClient"
+		inheritHeaders="true">
+		<cxf:features>
+			<clustering:loadDistributor>
+				<clustering:strategy>
+					<beans:ref bean="sequentialStrategy" />
+				</clustering:strategy>
+			</clustering:loadDistributor>
+		</cxf:features>
+		<cxf:headers>
+			<beans:entry key="Accept" value="text/xml" />
+		</cxf:headers>
+	</cxf:rsClient>
+	<beans:bean id="sequentialStrategy"
+		class="org.apache.cxf.clustering.SequentialStrategy">
+		<beans:property name="alternateAddresses">
+			<beans:ref bean="addressList" />
+		</beans:property>
+	</beans:bean>
+	<beans:bean id="randomStrategy" class="org.apache.cxf.clustering.RandomStrategy">
+		<beans:property name="alternateAddresses">
+			<beans:ref bean="addressList" />
+		</beans:property>
+	</beans:bean>
+
+
+	<camel:camelContext>
+		<camel:packageScan>
+			<camel:package>com.milan.cxf.camel.routes</camel:package>
+		</camel:packageScan>
+	</camel:camelContext>
+
+</beans:beans>
